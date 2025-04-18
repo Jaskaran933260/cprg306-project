@@ -2,15 +2,13 @@ import "./globals.css";
 
 export const metadata = {
   title: "NewsNext",
-  description: "cprg306-project",
+  description: "Web Dev Project",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
