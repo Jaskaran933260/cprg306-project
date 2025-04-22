@@ -1,89 +1,122 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-
-// Load Google Font using next/font if you're using app directory
+import Link from 'next/link';
+import { FiStar } from 'react-icons/fi';
+import { FaStar } from 'react-icons/fa';
 import { Playfair_Display } from 'next/font/google';
 
 const playfair = Playfair_Display({ subsets: ['latin'], weight: '700' });
 
-const categories = [
-    'general',
-    'business',
-    'technology',
-    'sports',
-    'entertainment',
-    'health',
-    'science',
-];
-
 export default function HomePage() {
     const [articles, setArticles] = useState([]);
     const [category, setCategory] = useState('general');
-    const [isLoading, setIsLoading] = useState(false);
+    const [favorites, setFavorites] = useState([]);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    const categories = [
+        'general',
+        'business',
+        'technology',
+        'sports',
+        'entertainment',
+        'health',
+        'science',
+    ];
+
+    useEffect(() => {
+        const stored = localStorage.getItem('favorites');
+        setFavorites(stored ? JSON.parse(stored) : []);
+    }, []);
 
     useEffect(() => {
         const fetchNews = async () => {
-            setIsLoading(true);
-            try {
-                const res = await fetch(
-                    `https://newsapi.org/v2/top-headlines?country=us&category=${category}&apiKey=1e26cff82a524232815e05cb03df7f07`
-                );
-                const data = await res.json();
-                setArticles(data.articles || []);
-            } catch (err) {
-                console.error('Error fetching news:', err);
-                setArticles([]);
-            }
-            setTimeout(() => setIsLoading(false), 300); // smoother UX
+            const res = await fetch(
+                `https://newsapi.org/v2/top-headlines?country=us&category=${category}&apiKey=1e26cff82a524232815e05cb03df7f07`
+            );
+            const data = await res.json();
+            setArticles(data.articles || []);
         };
         fetchNews();
     }, [category]);
 
-    return (
-        <main className="min-h-screen bg-gray-100 font-sans">
-            {/* Header with stylish font */}
-            <header className="bg-indigo-800 text-white text-center py-8 shadow-lg">
-                <h1
-                    className={`text-5xl tracking-wide uppercase drop-shadow-md ${playfair.className}`}
-                >
-                    🗞️ NewsNext
-                </h1>
-                <p className="text-lg text-indigo-200 mt-3 font-light italic">
-                    Your trusted source for today’s top headlines
-                </p>
-            </header>
+    const handleFavorite = (article) => {
+        const isFav = favorites.find((a) => a.title === article.title);
+        let updated;
+        if (isFav) {
+            updated = favorites.filter((a) => a.title !== article.title);
+        } else {
+            updated = [...favorites, article];
+        }
+        setFavorites(updated);
+        localStorage.setItem('favorites', JSON.stringify(updated));
+    };
 
-            {/* Category buttons */}
-            <section className="flex flex-wrap justify-center gap-3 p-5 bg-white shadow">
+    const isFavorite = (title) => favorites.some((a) => a.title === title);
+
+    return (
+        <div className="min-h-screen bg-gray-100 font-sans">
+            {/* Navbar */}
+            <nav className="bg-blue-800 text-white px-4 py-4 flex items-center justify-between relative shadow-md">
+                {/* Menu button on the left */}
+                <div className="absolute left-4">
+                    <button
+                        onClick={() => setSidebarOpen(!sidebarOpen)}
+                        className="bg-white px-3 py-1 rounded text-black hover:bg-blue-100"
+                    >
+                        ☰ Menu
+                    </button>
+                </div>
+
+                {/* Centered styled title */}
+                <h1 className={`text-4xl text-white mx-auto ${playfair.className}`}>
+                    📰NewsNext
+                </h1>
+
+                {/* Spacer */}
+                <div className="w-20" />
+            </nav>
+
+            {/* Sidebar (without close button) */}
+            {sidebarOpen && (
+                <aside className="bg-white shadow-lg w-full sm:w-64 p-4 absolute z-50 top-20 left-0 sm:left-auto">
+                    <nav className="flex flex-col gap-3 text-sm">
+                        <Link href="/" className="hover:underline text-blue-600">
+                            Home
+                        </Link>
+                        <Link href="/favorites" className="hover:underline text-blue-600">
+                            Favorites
+                        </Link>
+                        <Link href="/login" className="hover:underline text-blue-600">
+                            Log In / Sign Up
+                        </Link>
+                    </nav>
+                </aside>
+            )}
+
+            {/* Categories */}
+            <div className="flex flex-wrap justify-center gap-3 p-4 mt-4 bg-white shadow">
                 {categories.map((cat) => (
                     <button
                         key={cat}
                         onClick={() => setCategory(cat)}
-                        className={`px-4 py-2 rounded-full border text-sm capitalize font-medium transition-all duration-300 ${category === cat
-                                ? 'bg-blue-600 text-white border-blue-600 scale-105 shadow-md'
-                                : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 hover:scale-105'
+                        className={`px-4 py-2 rounded-full border text-sm capitalize font-medium transition ${category === cat
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
                             }`}
                     >
                         {cat}
                     </button>
                 ))}
-            </section>
+            </div>
 
-            {/* News Articles with transition on category change */}
-            <section
-                key={category}
-                className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6 transition-all duration-500 ${isLoading ? 'opacity-50 blur-sm' : 'opacity-100'
-                    }`}
-            >
+            {/* News Articles */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
                 {articles.length === 0 ? (
                     <p className="col-span-full text-center text-gray-500">No news found.</p>
                 ) : (
                     articles.map((article, index) => (
-                        <div
-                            key={index}
-                            className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-transform duration-300 hover:scale-[1.02]"
-                        >
+                        <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
                             {article.urlToImage && (
                                 <img
                                     src={article.urlToImage}
@@ -92,12 +125,20 @@ export default function HomePage() {
                                 />
                             )}
                             <div className="p-4">
-                                <h2 className="text-lg font-semibold mb-1">{article.title}</h2>
-                                <p className="text-sm text-gray-600">{article.description}</p>
+                                <div className="flex justify-between items-start">
+                                    <h2 className="text-lg font-semibold">{article.title}</h2>
+                                    <button onClick={() => handleFavorite(article)}>
+                                        {isFavorite(article.title) ? (
+                                            <FaStar className="text-yellow-500" />
+                                        ) : (
+                                            <FiStar className="text-gray-400 hover:text-yellow-400" />
+                                        )}
+                                    </button>
+                                </div>
+                                <p className="text-sm text-gray-600 mt-1">{article.description}</p>
                                 <a
                                     href={article.url}
                                     target="_blank"
-                                    rel="noopener noreferrer"
                                     className="text-blue-600 hover:underline text-sm mt-2 block"
                                 >
                                     Read more →
@@ -106,7 +147,7 @@ export default function HomePage() {
                         </div>
                     ))
                 )}
-            </section>
-        </main>
+            </div>
+        </div>
     );
 }
