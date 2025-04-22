@@ -1,4 +1,3 @@
-// components/Header.js
 export default function Header() {
     return (
         <header className="bg-indigo-900 text-white text-center p-5 shadow-md">

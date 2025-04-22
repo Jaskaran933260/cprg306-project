@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { FiStar } from 'react-icons/fi';
 import { FaStar } from 'react-icons/fa';
 import { Playfair_Display } from 'next/font/google';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from './lib/firebase';
 
 const playfair = Playfair_Display({ subsets: ['latin'], weight: '700' });
 
@@ -13,6 +15,7 @@ export default function HomePage() {
     const [category, setCategory] = useState('general');
     const [favorites, setFavorites] = useState([]);
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [user, setUser] = useState(null);
 
     const categories = [
         'general',
@@ -25,6 +28,13 @@ export default function HomePage() {
     ];
 
     useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            setUser(currentUser);
+        });
+        return () => unsubscribe();
+    }, []);
+
+    useEffect(() => {
         const stored = localStorage.getItem('favorites');
         setFavorites(stored ? JSON.parse(stored) : []);
     }, []);
@@ -34,6 +44,7 @@ export default function HomePage() {
             const res = await fetch(
                 `https://newsapi.org/v2/top-headlines?country=us&category=${category}&apiKey=1e26cff82a524232815e05cb03df7f07`
             );
+
             const data = await res.json();
             setArticles(data.articles || []);
         };
@@ -54,6 +65,11 @@ export default function HomePage() {
 
     const isFavorite = (title) => favorites.some((a) => a.title === title);
 
+    const handleLogout = () => {
+        signOut(auth);
+        setSidebarOpen(false);
+    };
+
     return (
         <div className="min-h-screen bg-gray-100 font-sans">
             {/* Navbar */}
@@ -68,16 +84,16 @@ export default function HomePage() {
                     </button>
                 </div>
 
-                {/* Centered styled title */}
                 <h1 className={`text-4xl text-white mx-auto ${playfair.className}`}>
                     📰NewsNext
                 </h1>
 
-                {/* Spacer */}
-                <div className="w-20" />
+                <div className="absolute right-4 text-sm text-white">
+                    {user && `Welcome, ${user.displayName || user.email}`}
+                </div>
             </nav>
 
-            {/* Sidebar (without close button) */}
+            {/* Sidebar */}
             {sidebarOpen && (
                 <aside className="bg-white shadow-lg w-full sm:w-64 p-4 absolute z-50 top-20 left-0 sm:left-auto">
                     <nav className="flex flex-col gap-3 text-sm">
@@ -87,9 +103,18 @@ export default function HomePage() {
                         <Link href="/favorites" className="hover:underline text-blue-600">
                             Favorites
                         </Link>
-                        <Link href="/login" className="hover:underline text-blue-600">
-                            Log In / Sign Up
-                        </Link>
+                        {!user ? (
+                            <Link href="/login" className="hover:underline text-blue-600">
+                                Log In / Sign Up
+                            </Link>
+                        ) : (
+                            <button
+                                onClick={handleLogout}
+                                className="text-left text-blue-600 hover:underline"
+                            >
+                                Log Out
+                            </button>
+                        )}
                     </nav>
                 </aside>
             )}

@@ -1,4 +1,3 @@
-// lib/fetchNews.js
 export async function fetchNews(category = "general") {
     try {
         const res = await fetch(

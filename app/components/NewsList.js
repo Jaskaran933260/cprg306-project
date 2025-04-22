@@ -1,4 +1,3 @@
-// components/NewsList.js
 export default function NewsList({ articles = [] }) {
     if (!articles || articles.length === 0) {
         return <p className="text-center mt-10 text-gray-600">No news found.</p>;

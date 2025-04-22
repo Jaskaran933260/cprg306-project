@@ -1,4 +1,3 @@
-// components/CategorySelector.js
 const categories = [
     "general", "business", "technology",
     "sports", "entertainment", "health", "science"
